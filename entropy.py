@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 def calculate_entropy(region):
-    hist = cv2.calcHist([region], [0], None, [256], [0,256])
+    hist = cv2.calcHist([region], [0], None, [256], [0, 256])
     hist = hist / hist.sum()
     entropy = -np.sum(hist * np.log2(hist + np.finfo(float).eps))
     return entropy
@@ -19,7 +19,26 @@ def frame_entropy(frame, grid_size):
 
     return np.mean(entropy_values)
 
-# Example usage
-frame = cv2.imread('path_to_frame.jpg')
-avg_entropy = frame_entropy(frame, 32)  # Example grid size of 32x32
-print(f"Average Entropy: {avg_entropy}")
+# Load video
+cap = cv2.VideoCapture('/home/rahim/Documents/datasets/traffic/sh/1_Relaxing_highway_traffic.mp4')  # Update with the path to your video
+
+while cap.isOpened():
+    ret, frame = cap.read()
+    if not ret:
+        break
+
+    # Calculate average entropy for the frame
+    avg_entropy = frame_entropy(frame, 32)  # Example grid size of 32x32
+
+    # Display the entropy on the frame
+    entropy_text = f"Average Entropy: {avg_entropy:.2f}"
+    cv2.putText(frame, entropy_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+
+    # Show the frame
+    cv2.imshow('Frame', frame)
+
+    if cv2.waitKey(10) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
