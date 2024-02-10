@@ -3,6 +3,7 @@ import numpy as np
 import torch
 from pathlib import Path
 import sys
+import time
 
 # Load YOLOv5 model 
 model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)  # For example, yolov5s model
@@ -15,7 +16,9 @@ vehicle_classes = [i for i, name in enumerate(class_names) if name in vehicle_cl
 
 # Load video
 cap = cv2.VideoCapture('/home/rahim/Documents/datasets/traffic/sh/1_Relaxing_highway_traffic.mp4')
-fps = cap.get(cv2.CAP_PROP_FPS)
+fps = cap.get(cv2.CAP_PROP_FPS)  # Get the frame rate
+frame_count = 0
+start_time = time.time()
 
 # Parameters for Shi-Tomasi corner detection (good features to track)
 feature_params = dict(maxCorners=100, qualityLevel=0.3, minDistance=7, blockSize=7)
@@ -44,6 +47,8 @@ while True:
     ret, frame = cap.read()
     if not ret:
         break
+
+    frame_count += 1
 
      # Perform object detection using YOLOv5
     results = model(frame)
@@ -84,6 +89,16 @@ while True:
 
     count_text = f"Vehicle Count: {vehicle_count}"
     cv2.putText(frame, count_text, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+
+    # Calculate FPS every second or every few frames
+    if frame_count % 10 == 0:  # Adjust the interval as needed
+        end_time = time.time()
+        fps = frame_count / (end_time - start_time)
+        #print(f"FPS: {fps:.2f}")
+        
+        # Reset frame count and start time for next interval
+        frame_count = 0
+        start_time = time.time()
 
     fps_text = f"FPS: {fps:.2f}"
     cv2.putText(frame, fps_text, (50, 80), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
