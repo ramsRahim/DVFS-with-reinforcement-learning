@@ -51,7 +51,7 @@ frame_count =  [0 for _ in range(len(caps))]
 start_time = time.time()
 
 # Initialize batching structures
-frame_batches = [[] for _ in caps]  # Hold batches of frames for each stream
+frame_batches = []  # Hold batches of frames for each stream
 batch_size = 3  # Number of frames to accumulate before processing
 
 # Process each frame in the videos
@@ -62,11 +62,12 @@ while True:
             continue  # Skip if frame is not read successfully
         
         # Accumulate frames for the current stream
-        frame_batches[i].append(frame)
-        if len(frame_batches[i]) == batch_size:
+        frame_batches.append(frame)
+        print(len(frame_batches))
+        if len(frame_batches) % batch_size == 0:
             # Process the batch
-            for batch_frame in frame_batches[i]:
-                frame_count[i] += 1
+            for j,batch_frame in enumerate(frame_batches):
+                frame_count[j] += 1
                 # Preprocess the frame
 
                 # Perform inference
@@ -79,20 +80,20 @@ while True:
                 frame_gray = cv2.cvtColor(batch_frame, cv2.COLOR_BGR2GRAY)
 
                 # Calculate optical flow
-                p1, st, err = cv2.calcOpticalFlowPyrLK(old_grays[i], frame_gray, p0[i], None, **lk_params)
+                p1, st, err = cv2.calcOpticalFlowPyrLK(old_grays[j], frame_gray, p0[j], None, **lk_params)
 
                 # Select good points
                 good_new = p1[st == 1]
-                good_old = p0[i][st == 1]
+                good_old = p0[j][st == 1]
                 fps = 30
                 # Calculate FPS every second or every few frames
-                if frame_count[i] % 1 == 0:  # Adjust the interval as needed
+                if frame_count[j] % 1 == 0:  # Adjust the interval as needed
                     end_time = time.time()
-                    fps = frame_count[i] / (end_time - start_time)
+                    fps = frame_count[j] / (end_time - start_time)
                     cv2.putText(batch_frame, f"FPS: {fps:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
                     
                     # Reset frame count and start time for next interval
-                    frame_count[i] = 0
+                    frame_count[j] = 0
                     start_time = time.time()
 
                 for det in vehicle_detections:
@@ -106,8 +107,12 @@ while True:
                 count_text = f"Vehicle Count: {vehicle_count}"
                 cv2.putText(batch_frame, count_text, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
-                window_name = f"Stream {i+1}"
+                window_name = f"Stream {j+1}"
                 cv2.imshow(window_name, batch_frame)
+            frame_batches.clear()
+
+        
+            
     
     if cv2.waitKey(1) & 0xFF == ord('q'):  # Break the loop if 'q' is pressed
         break
