@@ -70,13 +70,13 @@ while True:
                 # Preprocess the frame
 
                 # Perform inference
-                results = model(frame)
+                results = model(batch_frame)
                 detections = results.xyxy[0].cpu().numpy()
 
                 vehicle_detections = [det for det in detections if int(det[5]) in vehicle_classes]
                 vehicle_count = len(vehicle_detections)
 
-                frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                frame_gray = cv2.cvtColor(batch_frame, cv2.COLOR_BGR2GRAY)
 
                 # Calculate optical flow
                 p1, st, err = cv2.calcOpticalFlowPyrLK(old_grays[i], frame_gray, p0[i], None, **lk_params)
@@ -89,7 +89,7 @@ while True:
                 if frame_count[i] % 1 == 0:  # Adjust the interval as needed
                     end_time = time.time()
                     fps = frame_count[i] / (end_time - start_time)
-                    cv2.putText(frame, f"FPS: {fps:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                    cv2.putText(batch_frame, f"FPS: {fps:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
                     
                     # Reset frame count and start time for next interval
                     frame_count[i] = 0
@@ -97,17 +97,17 @@ while True:
 
                 for det in vehicle_detections:
                     x1, y1, x2, y2, _, _ = map(int, det)
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    cv2.rectangle(batch_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                     # Calculate speed
                     speed = calculate_speed(np.float32(good_old), np.float32(good_new),fps)  # Placeholder function
-                    cv2.putText(frame, f"Speed: {speed:.2f}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                    cv2.putText(batch_frame, f"Speed: {speed:.2f}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
 
                 count_text = f"Vehicle Count: {vehicle_count}"
-                cv2.putText(frame, count_text, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                cv2.putText(batch_frame, count_text, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
                 window_name = f"Stream {i+1}"
-                cv2.imshow(window_name, frame)
+                cv2.imshow(window_name, batch_frame)
     
     if cv2.waitKey(1) & 0xFF == ord('q'):  # Break the loop if 'q' is pressed
         break
